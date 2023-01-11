@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>color_click</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        #game_area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game_body {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game_body #head {
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        .start_btn{
+            width: 100px;
+            height: 60px;
+            background-color: darkcyan;
+            text-align: center;
+            line-height: 60px;
+            border-radius: 20px;
+            color: #fff;
+        }
+
+        .color_block:hover {
+            opacity: .7;
+        }
+
+        .black {
+            background-color: #161823;
+        }
+
+
+        .yellow {
+            background-color: #fff143;
+        }
+
+        .red {
+            background-color: #ff2d51;
+        }
+
+        .green {
+            background-color: #16a951;
+        }
+
+        .pink {
+            background-color: #ffb3a7;
+        }
+
+        .gray {
+            background-color: #a1afc9;
+        }
+
+        .blue{
+            background-color: #44cef6;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div id="game_area">
+        <h1>color_click</h1>
+        <div id="head">
+            请点击：<span id="tips"></span>
+            丨得分：<span id="score">0</span>
+            丨剩余时间：<span id="left_time">0</span> 秒
+        </div>
+        <div id="game_body">
+
+        </div>
+    </div>
+</body>
+<script>
+    const game_area = document.querySelector("#game_area")
+    const game_body = game_area.querySelector("#game_body")
+    const tips = game_area.querySelector("#head").querySelector("#tips")
+    const score = game_area.querySelector("#head").querySelector("#score")
+    const left_time = game_area.querySelector("#head").querySelector("#left_time")
+    const color_map = ["black", "yellow", "red", "green", "pink", "gray", "blue"]
+
+    let cheat = false
+
+    const game_time = 30
+
+    let ticker = null
+    let tmout = null
+    let left_block = 0
+    let use_len = 0
+    let body_len = 0
+
+    function reset() {
+        score.innerText = 0
+        game_body.innerHTML = ""
+        left = 0
+        startBtn()
+    }
+
+    function handle_fail() {
+        window.clearInterval(ticker)
+        alert("结束！得分:" + score.innerText)
+        reset()
+    }
+
+    function start() {
+        left_time.innerText = game_time
+        ticker = setInterval(() => {
+            left_time.innerText--
+            if (left_time.innerText == 0) {
+                handle_fail()
+            }
+        }, 1000)
+        reset()
+        next()
+    }
+
+
+    function next() {
+        game_body.innerHTML = ""
+
+        let mp = make_map()
+        let already_click_group = new Set()
+        let t = Math.floor(Math.random() * color_map.length)
+
+        left_block = 0
+
+        tips.innerText = color_map[t]
+        tips.className = color_map[t]
+
+        for (const idx in mp) {
+            if (t == mp[idx]) { left_block++ }
+            game_body.appendChild(createColorBlock(color_map[mp[idx]], t == mp[idx], function () {
+                if (already_click_group.has(idx)) { return }
+
+                if (t != mp[idx]) {
+                    handle_fail()
+                    return
+                }
+
+                score.innerText++
+                left_block--
+                already_click_group.add(idx)
+
+                this.innerHTML = ""
+
+                if (left_block <= 0) {
+                    next()
+                }
+            }))
+        }
+
+        if (left_block == 0){
+            next()
+        }
+    }
+
+    function make_map() {
+        let mp = {}
+        for (let index = 0; index < 30; index++) {
+            mp[index] = Math.floor(Math.random() * color_map.length)
+        }
+        return mp
+    }
+
+    function createColorBlock(color, target, clickfunc) {
+        let new_block = document.createElement("div")
+
+        let box_size = Math.floor(body_len / 5)
+
+        if (target && cheat){
+            new_block.style.backgroundColor = "yellow"
+        }
+
+        new_block.style.width = box_size + "px"
+        new_block.style.height = box_size + "px"
+
+        let inner_block = document.createElement("div")
+
+        inner_block.className = "color_block " + color
+
+        inner_block.style.width = box_size - 3 + "px"
+        inner_block.style.height = box_size - 3 + "px"
+
+        new_block.appendChild(inner_block)
+
+        new_block.addEventListener("click", clickfunc)
+
+        return new_block
+    }
+
+    function calcPx() {
+        use_len = window.innerWidth <= window.innerHeight ? window.innerWidth : window.innerHeight
+        if (window.innerWidth <= window.innerHeight) {
+            body_len = use_len * 0.9
+        } else {
+            body_len = use_len * .67
+        }
+        game_body.style.width = body_len + "px"
+        game_body.style.height = body_len + "px"
+    }
+
+    function startBtn(){
+        let btn = document.createElement("div")
+        btn.className = "start_btn"
+        btn.innerText = "开始游戏"
+        btn.addEventListener("click",start)
+        game_body.appendChild(btn)
+    }
+
+    calcPx()
+
+    startBtn()
+</script>
+
+</html>
